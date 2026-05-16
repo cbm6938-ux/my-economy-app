@@ -145,7 +145,3 @@ except:
     st.info("뉴스를 연결 중입니다...")
 
 st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v3.5 | Anti-Blur & Pure Summary Mode</p>", unsafe_allow_html=True)
-except:
-    st.info("뉴스를 연결 중입니다...")
-
-st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v3.4 | Selective Visibility Tuning</p>", unsafe_allow_html=True)
