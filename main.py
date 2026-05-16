@@ -1,79 +1,83 @@
 import streamlit as st
 import yfinance as yf
 import feedparser
+import re
 from datetime import datetime
 
-# 1. 페이지 설정 및 테마 고정
+# 1. 페이지 설정
 st.set_page_config(page_title="Vibe Economy Pro", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [가독성 정밀 보정] 제목 시인성 확보 및 시스템 다크모드 방어
+# 🎨 [가독성 최종 정밀 보정] 초록색 강화 및 헤더 선명도 업그레이드
 st.markdown("""
     <style>
-    /* 1. 배경색 강제 고정 (시스템 설정 무시) */
-    .stApp {
-        background-color: #f1f3f5 !important;
-    }
+    /* 배경색 고정 */
+    .stApp { background-color: #f1f3f5 !important; }
     
-    /* 2. 상단 헤더: 남색 배경에 '흰색' 글자로 시인성 폭발 */
+    /* 상단 헤더 섹션 */
     .header-box {
-        background-color: #1e3a8a !important; /* 남색 배경 */
+        background-color: #1e3a8a !important;
         padding: 25px;
         border-radius: 12px;
         margin-bottom: 25px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         text-align: center;
     }
-    /* 제목과 부제목을 반드시 흰색으로 강제 고정 */
-    .header-box h2 {
-        color: #ffffff !important; 
-        font-weight: 800 !important;
-        margin: 0 !important;
-    }
-    .header-box p {
-        color: #cbd5e1 !important; 
-        font-size: 0.9rem !important;
-        margin-top: 8px !important;
-    }
+    .header-box h2 { color: #ffffff !important; font-weight: 800 !important; margin: 0 !important; }
+    .header-box p { color: #cbd5e1 !important; font-size: 0.9rem !important; margin-top: 8px !important; }
 
-    /* 3. 지표 카드: 고대비 화이트 */
+    /* 지표 카드 가독성 */
     div[data-testid="stMetric"] {
         background-color: #ffffff !important;
         border: 2px solid #dee2e6 !important;
         border-radius: 16px !important;
-        padding: 20px !important;
     }
-    label[data-testid="stMetricLabel"] { color: #475569 !important; font-weight: 700 !important; }
-    div[data-testid="stMetricValue"] { color: #2563eb !important; font-weight: 800 !important; }
+    label[data-testid="stMetricLabel"] { color: #334155 !important; font-weight: 700 !important; font-size: 1rem !important; }
+    div[data-testid="stMetricValue"] { color: #1e40af !important; font-weight: 800 !important; }
 
-    /* 4. 뉴스 카드: 사령관의 '요약' 섹션 */
+    /* 🟢 초록색(상승) 지표 진하게 보정 */
+    [data-testid="stMetricDelta"] > div { 
+        color: #065f46 !important; /* 더 짙은 에메랄드 그린 */
+        font-weight: 900 !important; 
+        background: rgba(6, 95, 70, 0.1); /* 약간의 배경색으로 대비 증가 */
+        padding: 2px 8px;
+        border-radius: 5px;
+    }
+
+    /* 🔴 빨간색(하락) 지표도 함께 보정 */
+    [data-testid="stMetricDelta"] > div[data-direction="down"] {
+        color: #991b1b !important; /* 더 짙은 레드 */
+    }
+
+    /* 흐릿했던 하단 섹션 제목 선명하게 */
+    .section-header {
+        color: #0f172a !important; /* 아주 진한 네이비 */
+        font-size: 1.3rem !important;
+        font-weight: 800 !important;
+        margin-top: 30px !important;
+        margin-bottom: 15px !important;
+        border-bottom: 3px solid #1e3a8a;
+        display: inline-block;
+        padding-bottom: 5px;
+    }
+
+    /* 뉴스 카드 및 요약 텍스트 */
     .news-card {
         background-color: #ffffff !important;
-        padding: 18px;
+        padding: 20px;
         border-radius: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 15px;
         border: 1px solid #ced4da !important;
-        border-left: 6px solid #1e3a8a !important;
+        border-left: 8px solid #1e3a8a !important;
     }
-    .news-card a {
-        color: #1e3a8a !important;
-        font-weight: 700 !important;
-        text-decoration: none !important;
-        font-size: 1.05rem !important;
-    }
-    .summary-box {
-        margin-top: 10px;
-        font-size: 0.9rem;
-        color: #334155 !important;
-        line-height: 1.5;
-    }
+    .news-card a { color: #1e3a8a !important; font-weight: 800 !important; font-size: 1.1rem !important; text-decoration: none !important; }
+    .summary-text { color: #475569 !important; font-size: 0.95rem !important; margin-top: 10px; line-height: 1.6; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 상단 헤더 (제목 가인성 확보) ---
+# --- 상단 헤더 ---
 st.markdown(f"""
     <div class="header-box">
         <h2>🚀 Vibe Economy Dashboard</h2>
-        <p>사령관의 실시간 경제 지표 브리핑 | {datetime.now().strftime("%Y.%m.%d %H:%M")} Live</p>
+        <p>실시간 경제 지표 브리핑 | {datetime.now().strftime("%Y.%m.%d %H:%M")} Live</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -96,29 +100,34 @@ for i, (name, ticker) in enumerate(indices.items()):
     with cols[i % 2]:
         st.metric(name, f"{val:,.2f}", f"{diff:+.2f}")
 
-st.divider()
+# --- 하단 섹션 제목 (선명도 강화) ---
+st.markdown('<p class="section-header">📰 오늘의 실시간 요약</p>', unsafe_allow_html=True)
 
-# 4. 실시간 뉴스 (분석 -> 요약으로 변경)
-st.subheader("📰 오늘의 실시간 요약")
-
+# 4. 실시간 뉴스 & 실제 내용 요약 엔진
 @st.cache_data(ttl=600)
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
     return feedparser.parse(url).entries[:5]
 
+def clean_html(text):
+    return re.sub('<[^<]+?>', '', text) # HTML 태그 제거
+
 try:
     news_items = fetch_news()
     for item in news_items:
+        # 뉴스 내용(description/summary)에서 실제 텍스트 추출 및 요약
+        raw_summary = item.get('summary', item.get('description', '내용 요약 정보가 없습니다.'))
+        clean_text = clean_html(raw_summary)
+        # 너무 길면 자르고 1줄 요약 바이브로 변경
+        short_summary = clean_text[:120] + "..." if len(clean_text) > 120 else clean_text
+        
         st.markdown(f"""
             <div class="news-card">
                 <a href="{item.link}" target="_blank">{item.title}</a>
-                <div class="summary-box">
-                    🚩 <b>사령관 요약:</b> 현재 시장의 핵심 맥락을 담은 소식입니다. 
-                    지표의 변화와 함께 원문 내용을 확인하여 흐름을 파악하십시오.
-                </div>
+                <p class="summary-text">🚩 <b>실시간 요약:</b> {short_summary}</p>
             </div>
             """, unsafe_allow_html=True)
 except:
-    st.info("뉴스를 로딩 중입니다...")
+    st.info("뉴스를 연결 중입니다...")
 
-st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v3.2 | Optimized Visibility</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v3.3 | Final Visibility Tuning</p>", unsafe_allow_html=True)
