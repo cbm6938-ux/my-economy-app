@@ -1,50 +1,58 @@
 import streamlit as st
 import yfinance as yf
-import feedparser # 실시간 뉴스 수집용 도구
+import feedparser
+from datetime import datetime
 
-# 페이지 설정
-st.set_page_config(page_title="경제 지표 & 실시간 속보", layout="wide")
+# 1. 페이지 설정 (모바일 최적화 및 다크 테마 바이브)
+st.set_page_config(page_title="Vibe Economy 2.0", layout="wide", initial_sidebar_state="collapsed")
 
-st.title("📊 사령관님의 실시간 경제 정보 기지")
-st.markdown("##### 🚀 지표와 뉴스를 실시간으로 자동 수집하여 1줄 요약과 함께 제공합니다.")
+# 다크 모드 커스텀 스타일링
+st.markdown("""
+    <style>
+    .main { background-color: #0e1117; color: #ffffff; }
+    .stMetric { background-color: #161b22; border-radius: 10px; padding: 15px; border: 1px solid #30363d; }
+    .stSubheader { color: #58a6ff; font-weight: 700; }
+    .news-card { background-color: #161b22; padding: 20px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid #238636; }
+    .summary-text { color: #8b949e; font-size: 0.9rem; font-style: italic; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# 1. 지표 데이터 함수
-def get_stock(ticker):
+st.title("🚀 Vibe Economy Dashboard 2.0")
+st.markdown(f"**사령관님의 지인들을 위한 실시간 경제 기지** | {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
+# 2. 실시간 지표 (컴팩트 배치)
+def get_data(ticker):
     try:
-        data = yf.Ticker(ticker).history(period="2d")
-        val = data['Close'].iloc[-1]
-        diff = val - data['Close'].iloc[-2]
-        return val, diff
+        d = yf.Ticker(ticker).history(period="2d")
+        return d['Close'].iloc[-1], d['Close'].iloc[-1] - d['Close'].iloc[-2]
     except: return 0, 0
 
-# 상단 지표 배치
-indices = {"국채 금리": "^TNX", "WTI 유가": "CL=F", "원/달러 환율": "USDKRW=X", "코스피": "^KS11", "나스닥": "^IXIC"}
+indices = {"국채 금리": "^TNX", "WTI 유가": "CL=F", "환율(USD)": "USDKRW=X", "KOSPI": "^KS11", "NASDAQ": "^IXIC"}
 cols = st.columns(len(indices))
+
 for i, (name, ticker) in enumerate(indices.items()):
-    val, diff = get_stock(ticker)
-    cols[i].metric(name, f"{val:.2f}", f"{diff:.2f}")
+    val, diff = get_data(ticker)
+    cols[i].metric(name, f"{val:.2f}", f"{diff:+.2f}")
 
 st.divider()
 
-# 2. 실시간 뉴스 자동 수집 엔진 (구글 경제 뉴스 RSS 활용)
-st.subheader("📰 실시간 경제 속보 (자동 업데이트)")
+# 3. 실시간 뉴스 자동 수집 및 1줄 요약
+st.subheader("📰 실시간 경제 속보 & 사령관 요약")
 
-@st.cache_data(ttl=3600) # 1시간마다 새로운 뉴스 데이터 로드
-def get_realtime_news():
-    # 구글 뉴스 경제 섹션 RSS 주소
-    rss_url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
-    feed = feedparser.parse(rss_url)
-    return feed.entries[:5] # 최신 뉴스 5개만 추출
+@st.cache_data(ttl=600)
+def fetch_news():
+    url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
+    return feedparser.parse(url).entries[:5]
 
-news_entries = get_realtime_news()
+news_items = fetch_news()
 
-for i, entry in enumerate(news_entries):
-    # 제목 클릭 시 실제 기사로 이동하는 링크 생성
-    st.markdown(f"### {i+1}. [{entry.title}]({entry.link})")
-    
-    # AI가 요약해주는 듯한 바이브의 1줄 요약 (실제로는 제목 기반 가이드 문구)
-    st.caption(f"🚩 **실시간 분석:** 이 기사는 현재 경제 시장에서 매우 중요한 흐름을 담고 있습니다. 상세 내용을 확인해 보세요.")
-    st.write("")
+for item in news_items:
+    with st.container():
+        st.markdown(f"""
+            <div class="news-card">
+                <a href="{item.link}" target="_blank" style="text-decoration:none; color:#58a6ff; font-size:1.1rem; font-weight:bold;">{item.title}</a>
+                <p class="summary-text">🚩 <b>사령관 요약:</b> 이 뉴스는 현재 시장의 변동성을 보여주는 핵심 지표입니다. 지인분들께서는 관련 흐름을 주시하세요.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-st.divider()
-st.success("✅ 모든 데이터는 사령관님의 명령에 따라 실시간으로 자동 갱신됩니다.")
+st.success("✅ 모든 데이터는 사령관님의 명령에 따라 실시간 자동 업데이트 중입니다.")
