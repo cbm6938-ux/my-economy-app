@@ -3,63 +3,63 @@ import yfinance as yf
 import feedparser
 from datetime import datetime
 
-# 1. 페이지 설정 및 모바일 강제 최적화
-st.set_page_config(page_title="Vibe Economy Pro", layout="wide", initial_sidebar_state="collapsed")
+# 1. 페이지 설정 및 모바일 최적화
+st.set_page_config(page_title="Vibe Economy 2.1", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [디자인 마스터] 가독성 200% 향상 및 프리미엄 마감
+# 🎨 [긴급 조정] 가독성 및 상단 디자인 마감
 st.markdown("""
     <style>
-    /* 1. 상단 여백 및 잘림 방지 (어플 느낌의 핵심) */
-    .block-container { padding-top: 3.5rem !important; padding-bottom: 2rem !important; background-color: #0d1117; }
+    /* 1. 전체 배경: 눈이 편하면서도 선명한 딥 그레이 */
+    .main { background-color: #0d1117; color: #c9d1d9; }
     
-    /* 2. 최상단 헤더 바 (네온 블루 포인트) */
+    /* 2. 상단 여백 확보 (잘림 방지) */
+    .block-container { padding-top: 2.5rem !important; padding-bottom: 0rem !important; }
+    
+    /* 3. 제목 섹션: 선명한 화이트 및 슬림 디자인 */
     .app-header {
-        position: fixed; top: 0; left: 0; right: 0; height: 60px;
-        background-color: #161b22;
-        border-bottom: 2px solid #58a6ff;
-        display: flex; align-items: center; padding: 0 20px; z-index: 999;
+        background: linear-gradient(90deg, #1f6feb, #111);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #30363d;
     }
-    .header-title { color: #ffffff !important; font-size: 1.3rem !important; font-weight: 800; margin: 0; }
+    .main-title { color: #ffffff !important; font-size: 1.5rem !important; font-weight: 800; margin: 0; }
+    .sub-title { color: #8b949e !important; font-size: 0.8rem !important; }
 
-    /* 3. 전체 텍스트 가독성: 배경은 더 검게, 글자는 더 하얗게 */
-    .main { color: #f0f6fc; }
-    h1, h2, h3 { color: #ffffff !important; font-weight: 800 !important; }
-
-    /* 4. 지표 카드: 시인성 극대화 */
+    /* 4. 지표 카드: 고대비 및 입체감 적용 */
     div[data-testid="stMetric"] {
-        background-color: #1c2128;
+        background-color: #161b22;
         border: 1px solid #30363d;
-        border-radius: 15px;
-        padding: 20px !important;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        border-radius: 12px;
+        padding: 15px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
-    label[data-testid="stMetricLabel"] { color: #f0f6fc !important; font-size: 1rem !important; font-weight: 600 !important; }
-    div[data-testid="stMetricValue"] { color: #58a6ff !important; font-size: 2rem !important; font-weight: 900 !important; }
+    label[data-testid="stMetricLabel"] { color: #f0f6fc !important; font-size: 0.95rem !important; font-weight: 600 !important; }
+    div[data-testid="stMetricValue"] { color: #58a6ff !important; font-size: 1.8rem !important; font-weight: 800 !important; }
     
-    /* 5. 뉴스 카드: 배경과 일체화된 세련된 디자인 */
+    /* 5. 뉴스 카드 디자인 강화 */
     .news-card {
-        background-color: #1c2128;
-        padding: 20px;
-        border-radius: 15px;
-        margin-bottom: 15px;
+        background-color: #161b22;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 12px;
         border: 1px solid #30363d;
-        border-left: 6px solid #238636; /* 성공을 상징하는 초록색 포인트 */
+        border-left: 5px solid #58a6ff;
     }
-    .news-link { color: #ffffff !important; font-size: 1.1rem !important; font-weight: 700; text-decoration: none; line-height: 1.5; }
-    .news-summary { color: #8b949e !important; font-size: 0.9rem; margin-top: 10px; }
-    
-    /* 6. 모바일 하단 여백 추가 */
-    .footer-space { margin-top: 50px; text-align: center; color: #30363d; font-size: 0.8rem; }
+    .news-link { color: #f0f6fc !important; font-size: 1rem !important; font-weight: 700; text-decoration: none; line-height: 1.4; }
+    .news-summary { color: #8b949e !important; font-size: 0.85rem; margin-top: 8px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 상단 고정 헤더 ---
-st.markdown('<div class="app-header"><p class="header-title">🚀 VIBE ECONOMY PRO</p></div>', unsafe_allow_html=True)
+# --- 상단 헤더 섹션 (부자연스러움 해결) ---
+st.markdown(f"""
+    <div class="app-header">
+        <p class="main-title">🚀 Vibe Economy 2.1</p>
+        <p class="sub-title">사령관 전용 실시간 경제 브리핑 | {datetime.now().strftime("%Y.%m.%d %H:%M")}</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# 헤더 아래 여백 및 시간 표시
-st.markdown(f"<p style='color: #8b949e; font-size: 0.85rem; margin-top: 10px;'>최종 분석 시각: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>", unsafe_allow_html=True)
-
-# 2. 실시간 지표 수집
+# 2. 지표 수집 함수
 @st.cache_data(ttl=300)
 def get_eco_data(ticker):
     try:
@@ -69,9 +69,8 @@ def get_eco_data(ticker):
         return val, diff
     except: return 0, 0
 
-# 지표 배치 (모바일 2열)
-st.subheader("📈 실시간 마켓 지표")
-indices = {"국채 금리": "^TNX", "WTI 유가": "CL=F", "원/달러 환율": "USDKRW=X", "KOSPI": "^KS11", "NASDAQ": "^IXIC"}
+# 3. 실시간 지표 (2열 배치로 시원하게)
+indices = {"국채 금리": "^TNX", "WTI 유가": "CL=F", "원/달러 환율": "USDKRW=X", "코스피": "^KS11", "나스닥": "^IXIC"}
 cols = st.columns(2)
 
 for i, (name, ticker) in enumerate(indices.items()):
@@ -81,8 +80,8 @@ for i, (name, ticker) in enumerate(indices.items()):
 
 st.divider()
 
-# 3. 실시간 뉴스 자동 업데이트
-st.subheader("📰 오늘의 핵심 경제 브리핑")
+# 4. 실시간 뉴스 자동 업데이트
+st.subheader("📰 실시간 경제 속보")
 @st.cache_data(ttl=600)
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
@@ -94,10 +93,10 @@ try:
         st.markdown(f"""
             <div class="news-card">
                 <a href="{item.link}" target="_blank" class="news-link">{item.title}</a>
-                <p class="news-summary">🚩 <b>AI 1줄 요약:</b> 시장의 흐름을 결정지을 중요한 뉴스입니다. 제목을 클릭해 상세 내용을 확인하십시오.</p>
+                <p class="news-summary">🚩 <b>사령관 분석:</b> 시장 흐름의 핵심입니다. 제목을 클릭해 원문을 확인하세요.</p>
             </div>
             """, unsafe_allow_html=True)
 except:
-    st.info("뉴스를 새로고침 중입니다...")
+    st.write("데이터 복구 중...")
 
-st.markdown('<div class="footer-space">Vibe Coding Pro v5.0 | Official Release</div>', unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #30363d; font-size: 0.8rem; margin-top: 2rem;'>COMMANDER SYSTEM V2.1 ACTIVE</p>", unsafe_allow_html=True)
