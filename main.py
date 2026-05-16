@@ -3,25 +3,53 @@ import yfinance as yf
 import feedparser
 from datetime import datetime
 
-# 1. 페이지 설정 (모바일 최적화 & 다크 테마 바이브)
+# 1. 페이지 설정 및 모바일 가독성 향상
 st.set_page_config(page_title="Vibe Economy 2.0", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 사령관 전용 다크모드 커스텀 스타일링
+# 🎨 디자인 최적화 (배경은 부드럽게, 글자는 선명하게)
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; color: #ffffff; }
-    .stMetric { background-color: #161b22; border-radius: 12px; padding: 15px; border: 1px solid #30363d; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    [data-testid="stMetricValue"] { font-size: 1.8rem !important; color: #58a6ff !important; }
-    .news-card { background-color: #161b22; padding: 20px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #238636; }
-    .summary-text { color: #8b949e; font-size: 0.95rem; margin-top: 8px; line-height: 1.5; }
-    a { text-decoration: none !important; }
+    /* 전체 배경: 완전 검정 대신 눈이 편한 진회색 */
+    .main { background-color: #1c2128; color: #e6edf3; }
+    
+    /* 제목 부분 슬림화 및 자연스러운 정렬 */
+    .title-text { font-size: 1.8rem !important; font-weight: 800; color: #f0f6fc; margin-bottom: 0.5rem; }
+    .subtitle-text { font-size: 0.9rem !important; color: #8b949e; margin-bottom: 2rem; }
+
+    /* 지표 카드: 가독성 중심 디자인 */
+    [data-testid="stMetric"] { 
+        background-color: #22272e; 
+        border-radius: 12px; 
+        padding: 15px 20px; 
+        border: 1px solid #444c56; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    [data-testid="stMetricLabel"] { color: #8b949e !important; font-size: 0.9rem !important; }
+    [data-testid="stMetricValue"] { color: #58a6ff !important; font-size: 1.6rem !important; font-weight: 700 !important; }
+
+    /* 뉴스 카드: 선명한 대비 */
+    .news-card { 
+        background-color: #22272e; 
+        padding: 18px; 
+        border-radius: 12px; 
+        margin-bottom: 12px; 
+        border: 1px solid #444c56;
+        border-left: 6px solid #2f81f7; 
+    }
+    .news-title { color: #58a6ff !important; font-size: 1.05rem !important; font-weight: bold; text-decoration: none; }
+    .summary-text { color: #c9d1d9 !important; font-size: 0.92rem; margin-top: 8px; line-height: 1.6; }
+    
+    /* 구분선 색상 조절 */
+    hr { border: 0; border-top: 1px solid #444c56; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🚀 Vibe Economy Dashboard 2.0")
-st.markdown(f"**사령관님의 실시간 경제 기지** | {datetime.now().strftime('%Y-%m-%d %H:%M')} 업데이트")
+# 헤더 섹션 (슬림하고 자연스럽게 변경)
+st.markdown('<p class="title-text">📊 Vibe Economy 2.0</p>', unsafe_allow_html=True)
+st.markdown(f'<p class="subtitle-text">사령관의 실시간 경제 기지 | {datetime.now().strftime("%y.%m.%d %H:%M")} Update</p>', unsafe_allow_html=True)
 
-# 2. 실시간 지표 (상단 가로 배치 - 모바일에서는 자동 줄바꿈)
+# 2. 실시간 지표 수집
+@st.cache_data(ttl=300)
 def get_data(ticker):
     try:
         d = yf.Ticker(ticker).history(period="2d")
@@ -30,19 +58,20 @@ def get_data(ticker):
         return val, change
     except: return 0, 0
 
-indices = {"국채 금리(10Y)": "^TNX", "WTI 유가": "CL=F", "환율(USD/KRW)": "USDKRW=X", "KOSPI": "^KS11", "NASDAQ": "^IXIC"}
-cols = st.columns(len(indices))
+indices = {"국채 금리": "^TNX", "WTI 유가": "CL=F", "환율": "USDKRW=X", "KOSPI": "^KS11", "NASDAQ": "^IXIC"}
+cols = st.columns(2) # 모바일에서 2열로 배치하여 공간 절약
 
 for i, (name, ticker) in enumerate(indices.items()):
     val, diff = get_data(ticker)
-    cols[i].metric(name, f"{val:,.2f}", f"{diff:+.2f}")
+    with cols[i % 2]: # 지표를 2열로 번갈아가며 배치
+        st.metric(name, f"{val:,.2f}", f"{diff:+.2f}")
 
 st.divider()
 
-# 3. 실시간 뉴스 자동 수집 (구글 RSS 기반)
-st.subheader("📰 지금 이 시각 주요 뉴스 (사령관의 1줄 브리핑)")
+# 3. 실시간 뉴스 (가독성 강화 버전)
+st.subheader("📰 실시간 주요 브리핑")
 
-@st.cache_data(ttl=600) # 10분마다 뉴스 갱신
+@st.cache_data(ttl=600)
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
     return feedparser.parse(url).entries[:5]
@@ -50,14 +79,13 @@ def fetch_news():
 try:
     news_items = fetch_news()
     for item in news_items:
-        with st.container():
-            st.markdown(f"""
-                <div class="news-card">
-                    <a href="{item.link}" target="_blank" style="color:#58a6ff; font-size:1.15rem; font-weight:bold;">{item.title}</a>
-                    <p class="summary-text">🚩 <b>사령관 요약:</b> 시장의 흐름을 결정지을 핵심 보급로 정보입니다. 지인들께도 이 흐름을 공유하세요.</p>
-                </div>
-                """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="news-card">
+                <a href="{item.link}" target="_blank" class="news-title">{item.title}</a>
+                <p class="summary-text"><b>[분석]</b> 시장의 핵심 흐름을 담은 보급로 정보입니다. 지인들께 이 기사를 공유하여 가이드해 주세요.</p>
+            </div>
+            """, unsafe_allow_html=True)
 except:
-    st.error("⚠️ 뉴스 통신망에 일시적인 장애가 발생했습니다.")
+    st.error("⚠️ 뉴스 통신망 확인 중...")
 
-st.success("✅ 모든 시스템이 사령관님의 지휘 하에 실시간 가동 중입니다.")
+st.markdown("<br><p style='text-align: center; color: #8b949e; font-size: 0.8rem;'>System Active. All indicators are real-time.</p>", unsafe_allow_html=True)
