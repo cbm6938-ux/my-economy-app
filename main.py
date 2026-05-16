@@ -5,9 +5,9 @@ from datetime import datetime
 import time
 
 # 1. 페이지 설정
-st.set_page_config(page_title="Vibe Economy Pro 4.8", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Vibe Economy Pro 4.9", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [경량화 디자인] 카드 크기 축소 및 고대비 유지
+# 🎨 [가독성 마감] 단위 포함 최적화 및 고대비 유지
 st.markdown("""
 <style>
     .stApp { background-color: #f1f3f5 !important; }
@@ -20,31 +20,31 @@ st.markdown("""
 
     .info-text { color: #475569 !important; font-size: 0.8rem !important; font-weight: 700 !important; margin-bottom: 8px !important; }
 
-    /* 📊 [지표 카드 경량화] 패딩 및 크기 축소 */
+    /* 📊 지표 카드: 콤팩트 스타일 유지 */
     div[data-testid="stMetric"] {
         background-color: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 12px !important;
-        padding: 12px 15px !important; /* 여백 축소 */
+        padding: 12px 15px !important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
     }
     label[data-testid="stMetricLabel"] { color: #334155 !important; font-weight: 800 !important; font-size: 0.95rem !important; }
     
-    /* 지수 숫자: 콤팩트하게 조정 */
+    /* 지수 숫자 및 단위 시인성 */
     div[data-testid="stMetricValue"] { 
         color: #000000 !important; 
         font-weight: 900 !important; 
-        font-size: 1.8rem !important; /* 크기 축소 */
+        font-size: 1.7rem !important; /* 단위 추가로 인해 소폭 조정 */
     }
 
-    /* 🟢 상승(녹색) 네온 뱃지: 콤팩트화 */
+    /* 🟢 상승(녹색) 네온 뱃지 */
     [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Up"]) {
         color: #ffffff !important;           
         background-color: #00c853 !important; 
         font-weight: 900 !important;
         padding: 3px 10px !important;
         border-radius: 8px !important;
-        font-size: 1.1rem !important;
+        font-size: 1rem !important;
     }
     
     [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Down"]) {
@@ -72,7 +72,7 @@ st.markdown("""
 # --- 상단 헤더 ---
 st.markdown('<div class="header-box"><h2>🚀 Vibe Economy Dashboard</h2></div>', unsafe_allow_html=True)
 
-# 2. 데이터 수집 엔진 (5분 주기)
+# 2. 데이터 수집 엔진
 @st.cache_data(ttl=300)
 def get_eco(ticker):
     try:
@@ -84,13 +84,27 @@ def get_eco(ticker):
 
 st.markdown('<p class="info-text">※ 각 지수는 전 거래일 종가 기준입니다</p>', unsafe_allow_html=True)
 
-# 3. 지표 2열 배치
-indices = {"🇺🇸 국채 10년": "^TNX", "🛢️ WTI 유가": "CL=F", "💵 환율(USD)": "USDKRW=X", "🇰🇷 KOSPI": "^KS11", "🇺🇸 NASDAQ": "^IXIC"}
+# 3. 지표 정의 및 단위 설정
+indices = {
+    "🇺🇸 국채 10년": ("^TNX", "%"),
+    "🛢️ WTI 유가": ("CL=F", "$"),
+    "💵 환율(USD)": ("USDKRW=X", "원"),
+    "🇰🇷 KOSPI": ("^KS11", "pt"),
+    "🇺🇸 NASDAQ": ("^IXIC", "pt")
+}
+
 cols = st.columns(2)
-for i, (name, ticker) in enumerate(indices.items()):
+for i, (name, (ticker, unit)) in enumerate(indices.items()):
     val, diff = get_eco(ticker)
+    
+    # 단위 위치 최적화 (달러는 앞에, 나머지는 뒤에)
+    if unit == "$":
+        display_val = f"{unit}{val:,.2f}"
+    else:
+        display_val = f"{val:,.2f}{unit}"
+        
     with cols[i % 2]:
-        st.metric(name, f"{val:,.2f}", f"{diff:+.2f}")
+        st.metric(name, display_val, f"{diff:+.2f}{unit}")
 
 # --- 뉴스 섹션 ---
 st.markdown('<p class="section-header">📰 섹터별 주요 소식</p>', unsafe_allow_html=True)
@@ -128,4 +142,4 @@ try:
 except:
     st.info("뉴스를 연결 중입니다...")
 
-st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.8 | Compact View Mode</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.9 | Tactical Unit Mode</p>", unsafe_allow_html=True)
