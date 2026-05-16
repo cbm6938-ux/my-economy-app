@@ -1,71 +1,95 @@
 import streamlit as st
 import yfinance as yf
 import feedparser
+import pandas as pd
 from datetime import datetime
 
-# 1. 페이지 설정
-st.set_page_config(page_title="Vibe Economy 3.0", layout="wide")
+# 1. 페이지 및 테마 설정
+st.set_page_config(page_title="Vibe Economy 3.5", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [UI 최적화] 거슬리는 라벨 제거 및 폰트 선명도 강화
+# 🎨 [소프트 다크 & 가독성 최적화]
 st.markdown("""
     <style>
-    .main { background-color: #121212; color: #E0E0E0; }
-    /* 차트 상단 여백 조절 */
-    .stChart { margin-top: -20px; }
-    /* 메트릭 카드 가독성 */
-    [data-testid="stMetric"] { background-color: #1E1E1E; border-radius: 12px; border: 1px solid #333333; }
+    /* 배경: 너무 까맣지 않은 세련된 다크 그레이 */
+    .main { background-color: #0d1117; color: #c9d1d9; }
+    
+    /* 헤더 슬림화 */
+    .block-container { padding-top: 1.5rem !important; }
+    
+    /* 지표 카드 디자인 */
+    div[data-testid="stMetric"] {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 15px !important;
+    }
+
+    /* 상태 표시 배지 디자인 */
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-left: 5px;
+    }
+    .high { background-color: #f85149; color: white; }
+    .stable { background-color: #238636; color: white; }
+    .low { background-color: #1f6feb; color: white; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🚀 Vibe Economy 3.0")
-st.markdown(f"**Commander's Dashboard** | {datetime.now().strftime('%H:%M')} Live")
-
-# 2. 데이터 수집 엔진
-@st.cache_data(ttl=300)
-def get_clean_data(ticker, period="1mo"):
+# 2. 데이터 분석 엔진 (1년치 기준)
+@st.cache_data(ttl=3600)
+def get_analysis_data(ticker):
     try:
-        d = yf.Ticker(ticker).history(period=period)
-        # 🚩 [중요] Date와 Close라는 글자가 차트에 뜨지 않도록 이름을 제거합니다.
-        chart_df = d[['Close']].copy()
-        chart_df.index.name = None # 'Date' 라벨 제거
-        chart_df.columns = [None]  # 'Close' 라벨 제거
-        return chart_df
+        # 1년치 데이터 수집
+        data = yf.Ticker(ticker).history(period="1y")
+        if data.empty: return None
+        
+        curr = data['Close'].iloc[-1]
+        prev = data['Close'].iloc[-2]
+        high_1y = data['Close'].max()
+        low_1y = data['Close'].min()
+        
+        # 상태 판정 로직 (1년 범위 내 위치 기준)
+        range_1y = high_1y - low_1y
+        position = (curr - low_1y) / range_1y
+        
+        if position > 0.8: status = ("높음", "high")
+        elif position < 0.2: status = ("낮음", "low")
+        else: status = ("안정", "stable")
+        
+        # 차트용 데이터 정리 (이름 제거)
+        chart_df = data[['Close']].copy()
+        chart_df.index.name = None
+        chart_df.columns = [None]
+        
+        return {"curr": curr, "diff": curr-prev, "status": status, "chart": chart_df}
     except: return None
 
+# 헤더
+st.markdown(f"### 📊 Vibe Economy 3.5")
+st.caption(f"사령관의 지능형 경제 기지 | {datetime.now().strftime('%Y-%m-%d %H:%M')} 실시간 분석")
+
+# 3. 메인 지표 & 1년 차트 레이아웃
 indices = {"국채 금리": "^TNX", "WTI 유가": "CL=F", "환율": "USDKRW=X", "코스피": "^KS11", "나스닥": "^IXIC"}
 
-# 3. 상단 지표 (2열 배치)
-cols = st.columns(2)
-for i, (name, ticker) in enumerate(indices.items()):
-    hist = yf.Ticker(ticker).history(period="2d")
-    if not hist.empty:
-        val = hist['Close'].iloc[-1]
-        diff = val - hist['Close'].iloc[-2]
-        with cols[i % 2]:
-            st.metric(name, f"{val:,.2f}", f"{diff:+.2f}")
+for name, ticker in indices.items():
+    res = get_analysis_data(ticker)
+    if res:
+        # 지표와 상태 표시
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            st.metric(name, f"{res['curr']:,.2f}", f"{res['diff']:+.2f}")
+            st.markdown(f"현재 상태: <span class='status-badge {res['status'][1]}'>{res['status'][0]}</span>", unsafe_allow_html=True)
+        
+        with col2:
+            # 1년치 Area 차트 (Y축 자동 줌)
+            st.area_chart(res['chart'], height=120, use_container_width=True)
+    st.divider()
 
-st.divider()
-
-# 4. [개선된 차트] 줌 기능 탑재 & 라벨 제거
-st.subheader("📈 시장 흐름 정밀 분석 (1개월)")
-
-selected_name = st.selectbox("분석 지표 선택", list(indices.keys()))
-chart_data = get_clean_data(indices[selected_name], "1mo")
-
-if chart_data is not None:
-    # 🚩 Y축 자동 줌: 직선처럼 보이는 현상을 방지하기 위해 최소/최댓값에 맞춥니다.
-    # 지표마다 변동폭이 다르므로 유연하게 설정
-    y_min = float(chart_data.min().iloc[0]) * 0.99
-    y_max = float(chart_data.max().iloc[0]) * 1.01
-
-    # 사령관님, area_chart를 쓰면 아래쪽에 색이 채워져서 훨씬 '어플' 같습니다!
-    st.area_chart(chart_data, height=250, use_container_width=True)
-    st.caption(f"💡 {selected_name}의 최근 추세입니다. (불필요한 데이터 라벨 제거 완료)")
-
-st.divider()
-
-# 5. 뉴스 섹션
-st.subheader("📰 실시간 속보")
+# 4. 뉴스 브리핑 (기존 유지)
+st.subheader("📰 실시간 경제 브리핑")
 @st.cache_data(ttl=600)
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
@@ -73,7 +97,7 @@ def fetch_news():
 
 for item in fetch_news():
     st.markdown(f"""
-        <div style="background-color: #1E1E1E; padding: 15px; border-radius: 10px; border-left: 4px solid #00E5FF; margin-bottom: 10px;">
-            <a href="{item.link}" target="_blank" style="color:#00E5FF; font-weight:bold; text-decoration:none;">{item.title}</a>
+        <div style="background-color: #161b22; padding: 12px; border-radius: 10px; border-left: 4px solid #58a6ff; margin-bottom: 8px;">
+            <a href="{item.link}" target="_blank" style="color:#58a6ff; font-weight:bold; text-decoration:none; font-size:0.9rem;">{item.title}</a>
         </div>
         """, unsafe_allow_html=True)
