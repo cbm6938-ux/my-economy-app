@@ -6,19 +6,28 @@ from datetime import datetime
 # 1. 페이지 설정 및 테마 강제 고정
 st.set_page_config(page_title="Vibe Economy Pro", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [가독성 정예화 디자인] 사령관의 눈을 위한 최종 시각 최적화
+# 🎨 [가독성 최종 최적화] 지수 글씨 강화 + 네온 그린 뱃지 + 기준점 안내 스타일
 st.markdown("""
     <style>
     /* 배경색 고정 */
     .stApp { background-color: #f1f3f5 !important; }
     
-    /* 상단 헤더: 남색 배경 + 순백색 제목 */
+    /* 상단 헤더 */
     .header-box {
         background-color: #0c1c4f !important;
         padding: 25px; border-radius: 12px; margin-bottom: 30px; text-align: center;
         box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
     .header-box h2 { color: #ffffff !important; font-weight: 900 !important; margin: 0 !important; font-size: 1.8rem !important; }
+
+    /* 기준 안내 문구 스타일 */
+    .info-text {
+        color: #475569 !important;
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 8px !important;
+        margin-left: 5px;
+    }
 
     /* 지표 카드 스타일 */
     div[data-testid="stMetric"] {
@@ -37,7 +46,7 @@ st.markdown("""
         font-size: 2.3rem !important; 
     }
 
-    /* 🟢 상승(녹색) 수치: 네온 에메랄드 뱃지 (채도 폭발) */
+    /* 🟢 상승(녹색) 수치: 네온 에메랄드 뱃지 */
     [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Up"]) {
         color: #ffffff !important;           
         background-color: #00c853 !important; 
@@ -82,7 +91,7 @@ st.markdown("""
 # --- 상단 헤더 ---
 st.markdown('<div class="header-box"><h2>🚀 Vibe Economy Dashboard</h2></div>', unsafe_allow_html=True)
 
-# 2. 데이터 수집 엔진 (간소화 버전)
+# 2. 데이터 수집 엔진
 @st.cache_data(ttl=300)
 def get_eco(ticker):
     try:
@@ -92,7 +101,10 @@ def get_eco(ticker):
         return val, diff
     except: return 0, 0
 
-# 3. 실시간 지표 (깔끔한 2열 배치)
+# 📍 [사령관 지시] 기준점 안내 문구 삽입
+st.markdown('<p class="info-text">※ 각 지수는 전 거래일 종가 기준입니다</p>', unsafe_allow_html=True)
+
+# 3. 실시간 지표 (2열 배치)
 indices = {"🇺🇸 국채 10년": "^TNX", "🛢️ WTI 유가": "CL=F", "💵 환율(USD)": "USDKRW=X", "🇰🇷 KOSPI": "^KS11", "🇺🇸 NASDAQ": "^IXIC"}
 cols = st.columns(2)
 
@@ -110,7 +122,7 @@ def classify_sector(title):
         if any(kw in title for kw in keywords): return sector
     return "경제일반"
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=2700)
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
     return feedparser.parse(url).entries[:5]
@@ -128,4 +140,4 @@ try:
 except:
     st.info("뉴스를 연결 중입니다...")
 
-st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.1 | Clean & Fast Mode</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.2 | Info Disclosure Mode</p>", unsafe_allow_html=True)
