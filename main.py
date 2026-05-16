@@ -3,47 +3,49 @@ import yfinance as yf
 import feedparser
 from datetime import datetime
 
-# 1. 페이지 설정 및 테마 강제 고정
-st.set_page_config(page_title="Vibe Economy Fixed", layout="wide", initial_sidebar_state="collapsed")
+# 1. 페이지 설정 및 테마 고정
+st.set_page_config(page_title="Vibe Economy Pro", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [시스템 다크모드 방어용] 고정형 고대비 스타일링
+# 🎨 [가독성 정밀 보정] 제목 시인성 확보 및 시스템 다크모드 방어
 st.markdown("""
     <style>
-    /* 1. 시스템 설정 무시하고 배경색 강제 고정 (연한 그레이) */
+    /* 1. 배경색 강제 고정 (시스템 설정 무시) */
     .stApp {
         background-color: #f1f3f5 !important;
     }
     
-    /* 2. 모든 글자색을 짙은 차콜로 강제 고정 (가시성 핵심) */
-    h1, h2, h3, p, span, div, label {
-        color: #212529 !important;
-    }
-
-    /* 3. 상단 헤더: 짙은 네이비 (시스템 색상 무시) */
+    /* 2. 상단 헤더: 남색 배경에 '흰색' 글자로 시인성 폭발 */
     .header-box {
-        background-color: #1e3a8a !important;
-        padding: 20px;
+        background-color: #1e3a8a !important; /* 남색 배경 */
+        padding: 25px;
         border-radius: 12px;
         margin-bottom: 25px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        text-align: center;
     }
-    .header-box h2, .header-box p {
-        color: #ffffff !important; /* 헤더 안의 글자만 화이트로 고정 */
+    /* 제목과 부제목을 반드시 흰색으로 강제 고정 */
+    .header-box h2 {
+        color: #ffffff !important; 
+        font-weight: 800 !important;
+        margin: 0 !important;
+    }
+    .header-box p {
+        color: #cbd5e1 !important; 
+        font-size: 0.9rem !important;
+        margin-top: 8px !important;
     }
 
-    /* 4. 지표 카드: 완전 화이트 배경에 진한 테두리 */
+    /* 3. 지표 카드: 고대비 화이트 */
     div[data-testid="stMetric"] {
         background-color: #ffffff !important;
         border: 2px solid #dee2e6 !important;
-        border-radius: 15px !important;
+        border-radius: 16px !important;
         padding: 20px !important;
     }
-    /* 지표 숫자 색상 (상승/하락 색상 유지하되 대비 강화) */
-    [data-testid="stMetricValue"] {
-        color: #0d6efd !important; /* 기본 값은 블루 */
-    }
+    label[data-testid="stMetricLabel"] { color: #475569 !important; font-weight: 700 !important; }
+    div[data-testid="stMetricValue"] { color: #2563eb !important; font-weight: 800 !important; }
 
-    /* 5. 뉴스 카드: 선명한 대비 레이아웃 */
+    /* 4. 뉴스 카드: 사령관의 '요약' 섹션 */
     .news-card {
         background-color: #ffffff !important;
         padding: 18px;
@@ -54,17 +56,24 @@ st.markdown("""
     }
     .news-card a {
         color: #1e3a8a !important;
-        font-weight: 800 !important;
+        font-weight: 700 !important;
         text-decoration: none !important;
+        font-size: 1.05rem !important;
+    }
+    .summary-box {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #334155 !important;
+        line-height: 1.5;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 상단 헤더 ---
+# --- 상단 헤더 (제목 가인성 확보) ---
 st.markdown(f"""
     <div class="header-box">
-        <h2>📊 Vibe Economy Pro (Fixed)</h2>
-        <p>시스템 설정을 무시하고 가시성을 최우선으로 설계된 함대입니다. | {datetime.now().strftime("%H:%M")} Live</p>
+        <h2>🚀 Vibe Economy Dashboard</h2>
+        <p>사령관의 실시간 경제 지표 브리핑 | {datetime.now().strftime("%Y.%m.%d %H:%M")} Live</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -89,8 +98,8 @@ for i, (name, ticker) in enumerate(indices.items()):
 
 st.divider()
 
-# 4. 실시간 뉴스
-st.subheader("📰 오늘의 실시간 브리핑")
+# 4. 실시간 뉴스 (분석 -> 요약으로 변경)
+st.subheader("📰 오늘의 실시간 요약")
 
 @st.cache_data(ttl=600)
 def fetch_news():
@@ -103,12 +112,13 @@ try:
         st.markdown(f"""
             <div class="news-card">
                 <a href="{item.link}" target="_blank">{item.title}</a>
-                <p style="margin-top:8px; font-size:0.9rem; color:#495057 !important;">
-                    🚩 <b>사령관 분석:</b> 시장 흐름의 핵심 기사입니다. 지표와 함께 체크하세요.
-                </p>
+                <div class="summary-box">
+                    🚩 <b>사령관 요약:</b> 현재 시장의 핵심 맥락을 담은 소식입니다. 
+                    지표의 변화와 함께 원문 내용을 확인하여 흐름을 파악하십시오.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 except:
-    st.info("뉴스를 연결 중입니다...")
+    st.info("뉴스를 로딩 중입니다...")
 
-st.markdown("<br><p style='text-align:center; color:#adb5bd; font-size:0.8rem;'>System-Proof Version v3.1</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v3.2 | Optimized Visibility</p>", unsafe_allow_html=True)
