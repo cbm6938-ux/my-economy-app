@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. 페이지 설정 및 테마 강제 고정
 st.set_page_config(page_title="Vibe Economy Pro", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [가독성 최종 최적화] 지수 글씨 강화 + 네온 그린 뱃지 + 기준점 안내 스타일
+# 🎨 [최종 시각화 마감] 고대비 디자인 + 뉴스 10개 확장 + 안내 문구 스타일
 st.markdown("""
     <style>
     /* 배경색 고정 */
@@ -20,7 +20,7 @@ st.markdown("""
     }
     .header-box h2 { color: #ffffff !important; font-weight: 900 !important; margin: 0 !important; font-size: 1.8rem !important; }
 
-    /* 기준 안내 문구 스타일 */
+    /* 안내 문구 스타일 (지표용) */
     .info-text {
         color: #475569 !important;
         font-size: 0.85rem !important;
@@ -38,13 +38,7 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
     }
     label[data-testid="stMetricLabel"] { color: #334155 !important; font-weight: 800 !important; font-size: 1.1rem !important; }
-    
-    /* ❗ 지수 숫자: 완전한 검정색 (시인성 극대화) */
-    div[data-testid="stMetricValue"] { 
-        color: #000000 !important; 
-        font-weight: 900 !important; 
-        font-size: 2.3rem !important; 
-    }
+    div[data-testid="stMetricValue"] { color: #000000 !important; font-weight: 900 !important; font-size: 2.3rem !important; }
 
     /* 🟢 상승(녹색) 수치: 네온 에메랄드 뱃지 */
     [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Up"]) {
@@ -57,20 +51,23 @@ st.markdown("""
         box-shadow: 0 0 10px rgba(0, 200, 83, 0.4);
     }
 
-    /* 🔴 하락(빨간색) 수치: 기본 대비 유지 */
-    [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Down"]) {
-        color: #dc2626 !important;
-        font-weight: 600 !important;
-    }
-
-    /* 뉴스 섹션 */
+    /* 뉴스 섹션 제목 */
     .section-header {
         color: #000000 !important;
         font-size: 1.5rem !important;
         font-weight: 900 !important;
         border-left: 10px solid #0c1c4f;
         padding-left: 15px;
-        margin: 40px 0 20px 0;
+        margin: 40px 0 5px 0; /* 아래 간격을 좁혀 안내 문구와 밀착 */
+    }
+
+    /* 뉴스 안내 문구 전용 스타일 */
+    .news-info {
+        color: #64748b !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 20px !important;
+        margin-left: 15px;
     }
 
     .news-card {
@@ -101,7 +98,6 @@ def get_eco(ticker):
         return val, diff
     except: return 0, 0
 
-# 📍 [사령관 지시] 기준점 안내 문구 삽입
 st.markdown('<p class="info-text">※ 각 지수는 전 거래일 종가 기준입니다</p>', unsafe_allow_html=True)
 
 # 3. 실시간 지표 (2열 배치)
@@ -113,19 +109,28 @@ for i, (name, ticker) in enumerate(indices.items()):
     with cols[i % 2]:
         st.metric(name, f"{val:,.2f}", f"{diff:+.2f}")
 
-st.markdown('<p class="section-header">📰 섹터별 주요 소식 (Top 5)</p>', unsafe_allow_html=True)
+# --- 뉴스 섹션 (정보 표시 추가) ---
+st.markdown('<p class="section-header">📰 섹터별 주요 소식</p>', unsafe_allow_html=True)
+st.markdown('<p class="news-info">※ 뉴스는 45분 마다 최신화 됩니다</p>', unsafe_allow_html=True)
 
-# 4. 뉴스 섹터 분류 및 출력
+# 4. 뉴스 섹터 분류 및 출력 (10개 확장)
 def classify_sector(title):
-    sectors = {"반도체": ["반도체", "삼성전자", "하이닉스", "엔비디아"], "건설/부동산": ["건설", "부동산", "아파트"], "조선/해운": ["조선", "선박", "해운"], "자동차": ["자동차", "전기차", "현대차"], "금융": ["금리", "환율", "연준", "은행"]}
+    sectors = {
+        "반도체": ["반도체", "삼성전자", "하이닉스", "엔비디아", "칩", "공정"],
+        "건설/부동산": ["건설", "부동산", "아파트", "미분양", "집값"],
+        "조선/해운": ["조선", "선박", "해운", "항만", "수주"],
+        "자동차/배터리": ["자동차", "전기차", "배터리", "이차전지", "현대차"],
+        "우주/항공": ["우주", "항공", "나사", "위성", "방산"],
+        "금융/정책": ["금리", "환율", "연준", "은행", "정부", "세금", "증시"]
+    }
     for sector, keywords in sectors.items():
         if any(kw in title for kw in keywords): return sector
     return "경제일반"
 
-@st.cache_data(ttl=2700)
+@st.cache_data(ttl=2700) # 사령관님이 설정하신 45분(2700초) 반영
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
-    return feedparser.parse(url).entries[:5]
+    return feedparser.parse(url).entries[:10] # 10개로 확장!
 
 try:
     news_items = fetch_news()
@@ -140,4 +145,4 @@ try:
 except:
     st.info("뉴스를 연결 중입니다...")
 
-st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.2 | Info Disclosure Mode</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.3 | Tactical Expansion Mode</p>", unsafe_allow_html=True)
