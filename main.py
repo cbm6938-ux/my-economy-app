@@ -3,124 +3,124 @@ import yfinance as yf
 import feedparser
 from datetime import datetime
 
-# 1. 페이지 설정 및 미드톤 테마 최적화
+# 1. 페이지 설정 및 강제 고대비 테마
 st.set_page_config(page_title="Vibe Economy Pro", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [최종 시각화 조치] 눈이 편한 배경 & 녹색 수치 폭발적 가시성
+# 🎨 [긴급 시인성 복구] 녹색 수치 폭발 + 지수 칠흑색 강화
 st.markdown("""
     <style>
-    /* 1. 전체 배경: 눈이 편한 샌드 그레이 미드톤 */
-    .stApp { background-color: #ebedef !important; color: #212529; }
+    /* 배경색 고정 (시스템 다크모드 방어) */
+    .stApp { background-color: #f1f3f5 !important; }
     
-    /* 2. 상단 헤더: 깊이감 있는 딥 네이비 포인트 */
+    /* 상단 헤더: 남색 배경 + 순백색 제목 */
     .header-box {
-        background-color: #0c1c4f;
+        background-color: #0c1c4f !important;
         padding: 25px;
         border-radius: 12px;
         margin-bottom: 30px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         text-align: center;
     }
-    .main-title { color: #ffffff !important; font-size: 1.8rem !important; font-weight: 800; margin: 0; }
-    .update-time { color: #bfdbfe !important; font-size: 0.9rem !important; margin-top: 5px; }
+    .header-box h2 { color: #ffffff !important; font-weight: 900 !important; margin: 0 !important; }
 
-    /* 3. 지표 카드: 고대비 화이트 배경 */
+    /* 지표 카드 디자인 */
     div[data-testid="stMetric"] {
-        background-color: #ffffff;
-        border: 2px solid #dee2e6;
-        border-radius: 12px;
-        padding: 20px !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        background-color: #ffffff !important;
+        border: 2px solid #cbd5e1 !important;
+        border-radius: 15px !important;
     }
-    /* 지표 레이블 글자색 */
-    label[data-testid="stMetricLabel"] { color: #495057 !important; font-size: 1rem !important; font-weight: 600 !important; }
+    label[data-testid="stMetricLabel"] { color: #334155 !important; font-weight: 800 !important; font-size: 1.1rem !important; }
     
-    /* 🟢 [사령관 지시] 상승(녹색) 지표 시인성 폭발적 강화 */
-    [data-testid="stMetricDelta"] > div { 
-        color: #064e3b !important; /* 칠흑처럼 짙은 에메랄드 */
+    /* ❗ 지수 숫자(4.59 등): 완전한 검정색으로 시인성 확보 */
+    div[data-testid="stMetricValue"] { 
+        color: #000000 !important; 
         font-weight: 900 !important; 
-        background: #d1fae5; /* 옅은 민트색 배경 */
-        padding: 3px 10px;
-        border-radius: 6px;
+        font-size: 2.2rem !important; 
     }
 
-    /* 🔴 하락(빨간색) 지표도 가시성 확보 */
-    [data-testid="stMetricDelta"] > div[data-direction="down"] {
-        color: #991b1b !important; /* 진한 레드 */
-        background: #fee2e2; /* 옅은 핑크색 배경 */
+    /* 🟢 [사령관 지시] 녹색(상승) 수치 가시성 "폭발" 보정 */
+    [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Up"]) {
+        color: #064e3b !important; /* 칠흑 같은 짙은 녹색 */
+        background-color: #4ade80 !important; /* 형광 그린 배경 */
+        font-weight: 900 !important;
+        padding: 4px 12px !important;
+        border-radius: 8px !important;
+        font-size: 1.2rem !important;
+        border: 1px solid #059669 !important;
     }
 
-    /* 4. 뉴스 섹션: 전문 대시보드 바이브 */
+    /* 섹션 제목 */
     .section-header {
-        color: #0f172a !important; /* 아주 진한 네이비 */
-        font-size: 1.4rem !important;
-        font-weight: 800 !important;
-        margin-top: 40px !important;
-        margin-bottom: 20px !important;
-        border-left: 8px solid #00E5FF;
+        color: #000000 !important;
+        font-size: 1.5rem !important;
+        font-weight: 900 !important;
+        border-left: 10px solid #0c1c4f;
         padding-left: 15px;
-        display: inline-block;
+        margin: 40px 0 20px 0;
     }
+
+    /* 뉴스 카드 및 섹터 태그 */
     .news-card {
-        background-color: #ffffff;
-        padding: 18px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        border-left: 8px solid #1e3a8a;
+        background-color: #ffffff !important;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        border: 1px solid #cbd5e1 !important;
+        display: flex;
+        align-items: center;
     }
     .sector-tag {
-        background-color: #f1f5f9;
-        color: #1e3a8a;
-        padding: 3px 8px;
-        border-radius: 5px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        margin-right: 12px;
+        background-color: #0c1c4f;
+        color: #ffffff !important;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 900;
+        margin-right: 15px;
+        white-space: nowrap;
     }
-    .news-link { color: #212529 !important; font-weight: 700 !important; font-size: 1.05rem !important; text-decoration: none; }
+    .news-link { color: #000000 !important; font-weight: 800 !important; font-size: 1.1rem !important; text-decoration: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- 상단 헤더 ---
 st.markdown(f"""
     <div class="header-box">
-        <p class="main-title">📊 Vibe Economy Pro 3.7</p>
-        <p class="update-time">사령관님의 실시간 종목별 뉴스 기지 | {datetime.now().strftime("%Y.%m.%d %H:%M")} Live</p>
+        <h2>🚀 Vibe Economy Dashboard</h2>
     </div>
     """, unsafe_allow_html=True)
 
-# 2. 데이터 수집 함수
+# 2. 데이터 수집
 @st.cache_data(ttl=300)
-def get_eco_data(ticker):
+def get_eco(ticker):
     try:
-        data = yf.Ticker(ticker).history(period="2d")
-        val = data['Close'].iloc[-1]
-        diff = val - data['Close'].iloc[-2]
+        d = yf.Ticker(ticker).history(period="2d")
+        val = d['Close'].iloc[-1]
+        diff = val - d['Close'].iloc[-2]
         return val, diff
     except: return 0, 0
 
-# 3. 실시간 지표 (깔끔한 2열 배치)
+# 3. 실시간 지표 (2열 배치)
 indices = {"🇺🇸 국채 10년": "^TNX", "🛢️ WTI 유가": "CL=F", "💵 환율(USD)": "USDKRW=X", "🇰🇷 KOSPI": "^KS11", "🇺🇸 NASDAQ": "^IXIC"}
 cols = st.columns(2)
 
 for i, (name, ticker) in enumerate(indices.items()):
-    val, diff = get_eco_data(ticker)
+    val, diff = get_eco(ticker)
     with cols[i % 2]:
         st.metric(name, f"{val:,.2f}", f"{diff:+.2f}")
 
-st.divider()
+st.markdown('<p class="section-header">📰 섹터별 주요 소식</p>', unsafe_allow_html=True)
 
-# 4. 섹터 분류 엔진 & 뉴스
-st.markdown('<p class="section-header">📰 주요 섹터별 실시간 뉴스</p>', unsafe_allow_html=True)
-
+# 4. 섹터 분류 엔진 (요약 대신 태그 추출)
 def classify_sector(title):
     sectors = {
-        "반도체": ["반도체", "삼성전자", "SK하이닉스", "엔비디아", "칩"],
-        "에너지/유가": ["유가", "에너지", "정유", "가스", "배터리"],
-        "금융/금리": ["금리", "은행", "금융", "연준", "환율"],
-        "조선": ["조선", "선박", "LNG선", "해운"],
-        "자동차": ["자동차", "현대차", "기아", "테슬라"],
-        "건설": ["건설", "부동산", "아파트"]
+        "반도체": ["반도체", "삼성전자", "SK하이닉스", "엔비디아", "칩", "TSMC"],
+        "건설/부동산": ["건설", "부동산", "아파트", "주택", "재건축"],
+        "조선/해운": ["조선", "선박", "해운", "LNG선", "HMM"],
+        "우주/항공": ["우주", "항공", "위성", "발사", "방산"],
+        "자동차/배터리": ["자동차", "전기차", "배터리", "현대차", "기아", "테슬라"],
+        "AI/빅테크": ["AI", "인공지능", "구글", "애플", "마이크로소프트", "메타"],
+        "에너지/금속": ["유가", "에너지", "구리", "철강", "리튬"],
+        "금융/정책": ["금리", "은행", "금융", "연준", "환율", "정부"]
     }
     for sector, keywords in sectors.items():
         if any(kw in title for kw in keywords):
@@ -143,6 +143,6 @@ try:
             </div>
             """, unsafe_allow_html=True)
 except:
-    st.info("데이터 로딩 중...")
+    st.info("뉴스를 연결 중입니다...")
 
-st.markdown("<p style='text-align: center; color: #6c757d; font-size: 0.8rem;'>Vibe Coding Pro v3.7 | Commander's Secure Terminal</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v3.8 | Maximum Visibility Mode</p>", unsafe_allow_html=True)
