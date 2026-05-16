@@ -1,138 +1,79 @@
 import streamlit as st
 import yfinance as yf
 import feedparser
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
-import pandas as pd
+from datetime import datetime
 
-# 1. 페이지 설정 및 가독성 최적화
-st.set_page_config(page_title="Vibe Economy 4.0", layout="wide", initial_sidebar_state="collapsed")
+# 1. 페이지 설정
+st.set_page_config(page_title="Vibe Economy 3.0", layout="wide")
 
-# 🎨 UI 디자인 (미드나잇 블루 & 가독성 강화 테마)
+# 🎨 [UI 최적화] 거슬리는 라벨 제거 및 폰트 선명도 강화
 st.markdown("""
     <style>
-    .main { background-color: #1a202c; color: #f7fafc; }
-    .header-container { padding: 1.5rem 0; border-bottom: 2px solid #4a5568; margin-bottom: 2rem; text-align: center; }
-    .title-text { font-size: 2.2rem !important; font-weight: 800; color: #63b3ed; margin: 0; }
-    
-    /* 지표 카드 디자인 */
-    [data-testid="stMetric"] { 
-        background-color: #2d3748; 
-        border-radius: 15px; padding: 20px; border: 1px solid #4a5568;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-    }
-    
-    /* 뉴스 및 1줄 요약 박스 */
-    .news-card { 
-        background-color: #2d3748; padding: 20px; border-radius: 15px; 
-        margin-bottom: 15px; border: 1px solid #4a5568; border-left: 8px solid #4299e1; 
-    }
-    .summary-box { 
-        background-color: #1a202c; padding: 12px; border-radius: 8px; 
-        margin-top: 10px; border: 1px solid #4a5568;
-    }
-    .summary-text { color: #63b3ed !important; font-size: 1rem; font-weight: 500; margin: 0; }
+    .main { background-color: #121212; color: #E0E0E0; }
+    /* 차트 상단 여백 조절 */
+    .stChart { margin-top: -20px; }
+    /* 메트릭 카드 가독성 */
+    [data-testid="stMetric"] { background-color: #1E1E1E; border-radius: 12px; border: 1px solid #333333; }
     </style>
     """, unsafe_allow_html=True)
 
-# 헤더 섹션
-st.markdown('<div class="header-container"><p class="title-text">📊 Vibe Economy 4.0</p></div>', unsafe_allow_html=True)
+st.title("🚀 Vibe Economy 3.0")
+st.markdown(f"**Commander's Dashboard** | {datetime.now().strftime('%H:%M')} Live")
 
-# 2. 데이터 수집 및 분석 함수
+# 2. 데이터 수집 엔진
 @st.cache_data(ttl=300)
-def get_fleet_data(ticker, period="7d"):
+def get_clean_data(ticker, period="1mo"):
     try:
-        data = yf.Ticker(ticker).history(period=period)
-        val = data['Close'].iloc[-1]
-        change = val - data['Close'].iloc[-2]
-        pct = (change / data['Close'].iloc[-2]) * 100
-        return val, change, pct, data['Close']
-    except: return 0, 0, 0, pd.Series()
+        d = yf.Ticker(ticker).history(period=period)
+        # 🚩 [중요] Date와 Close라는 글자가 차트에 뜨지 않도록 이름을 제거합니다.
+        chart_df = d[['Close']].copy()
+        chart_df.index.name = None # 'Date' 라벨 제거
+        chart_df.columns = [None]  # 'Close' 라벨 제거
+        return chart_df
+    except: return None
 
-# 🌡️ 시장 온도계 (Gauge Chart) 제작 함수
-def draw_gauge(score):
-    fig = go.Figure(go.Indicator(
-        mode = "gauge+number",
-        value = score,
-        domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "시장 온도 (Vibe Index)", 'font': {'size': 20, 'color': "#f7fafc"}},
-        gauge = {
-            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "#4a5568"},
-            'bar': {'color': "#63b3ed"},
-            'bgcolor': "#1a202c",
-            'borderwidth': 2,
-            'bordercolor': "#4a5568",
-            'steps': [
-                {'range': [0, 30], 'color': '#68d391'}, # 공포(기회)
-                {'range': [30, 70], 'color': '#cbd5e0'}, # 중립
-                {'range': [70, 100], 'color': '#fc8181'}  # 탐욕(주의)
-            ],
-            'threshold': {
-                'line': {'color': "white", 'width': 4},
-                'thickness': 0.75,
-                'value': score
-            }
-        }
-    ))
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                      font={'color': "#f7fafc", 'family': "Arial"}, height=300, margin=dict(l=20, r=20, t=50, b=20))
-    return fig
+indices = {"국채 금리": "^TNX", "WTI 유가": "CL=F", "환율": "USDKRW=X", "코스피": "^KS11", "나스닥": "^IXIC"}
 
-# 지표 리스트 정의
-indices = {"미국채 금리(10Y)": "^TNX", "WTI 유가": "CL=F", "환율(USD/KRW)": "USDKRW=X", "KOSPI": "^KS11", "NASDAQ": "^IXIC"}
-
-# 3. 메인 화면 구성
-# [1단계] 시장 온도계 배치
-score_total = 0
-results = {}
-
-for name, ticker in indices.items():
-    val, change, pct, history = get_fleet_data(ticker)
-    results[name] = (val, change, pct, history)
-    # 온도계 로직: 주식 상승(+), 금리/환율/유가 하락(-) 시 점수 부여 (간단 모델)
-    if name in ["KOSPI", "NASDAQ"]: score_total += (50 + pct*5)
-    else: score_total += (50 - pct*5)
-
-market_score = max(0, min(100, score_total / len(indices)))
-st.plotly_chart(draw_gauge(market_score), use_container_width=True)
-
-st.divider()
-
-# [2단계] 지표 카드 + 7일 트렌드(Sparkline)
-st.subheader("📈 핵심 지표 흐름 (7일 트렌드)")
+# 3. 상단 지표 (2열 배치)
 cols = st.columns(2)
-
-for i, (name, (val, change, pct, history)) in enumerate(results.items()):
-    with cols[i % 2]:
-        st.metric(name, f"{val:,.2f}", f"{change:+.2f} ({pct:+.2f}%)")
-        # 스파크라인 차트 추가
-        if not history.empty:
-            st.line_chart(history, height=100, use_container_width=True)
-        st.write("")
+for i, (name, ticker) in enumerate(indices.items()):
+    hist = yf.Ticker(ticker).history(period="2d")
+    if not hist.empty:
+        val = hist['Close'].iloc[-1]
+        diff = val - hist['Close'].iloc[-2]
+        with cols[i % 2]:
+            st.metric(name, f"{val:,.2f}", f"{diff:+.2f}")
 
 st.divider()
 
-# [3단계] 실시간 뉴스 1줄 요약
-st.subheader("📰 사령관의 실시간 1줄 브리핑")
+# 4. [개선된 차트] 줌 기능 탑재 & 라벨 제거
+st.subheader("📈 시장 흐름 정밀 분석 (1개월)")
 
+selected_name = st.selectbox("분석 지표 선택", list(indices.keys()))
+chart_data = get_clean_data(indices[selected_name], "1mo")
+
+if chart_data is not None:
+    # 🚩 Y축 자동 줌: 직선처럼 보이는 현상을 방지하기 위해 최소/최댓값에 맞춥니다.
+    # 지표마다 변동폭이 다르므로 유연하게 설정
+    y_min = float(chart_data.min().iloc[0]) * 0.99
+    y_max = float(chart_data.max().iloc[0]) * 1.01
+
+    # 사령관님, area_chart를 쓰면 아래쪽에 색이 채워져서 훨씬 '어플' 같습니다!
+    st.area_chart(chart_data, height=250, use_container_width=True)
+    st.caption(f"💡 {selected_name}의 최근 추세입니다. (불필요한 데이터 라벨 제거 완료)")
+
+st.divider()
+
+# 5. 뉴스 섹션
+st.subheader("📰 실시간 속보")
 @st.cache_data(ttl=600)
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
     return feedparser.parse(url).entries[:5]
 
-try:
-    for item in fetch_news():
-        # 첫 문장만 추출하여 요약 생성
-        summary_line = item.summary.split('.')[0] + '.' if item.summary else "상세 내용을 확인하십시오."
-        st.markdown(f"""
-            <div class="news-card">
-                <a href="{item.link}" target="_blank" style="color:#ebf8ff; font-size:1.1rem; font-weight:bold; text-decoration:none;">{item.title}</a>
-                <div class="summary-box">
-                    <p class="summary-text">🚩 <b>1줄 요약:</b> {summary_line}</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-except:
-    st.error("통신망 재설정 중...")
-
-st.markdown(f"<p style='text-align: center; color: #a0aec0; margin-top: 30px;'>{datetime.now().strftime('%Y-%m-%d %H:%M')} 함대 정상 가동 중</p>", unsafe_allow_html=True)
+for item in fetch_news():
+    st.markdown(f"""
+        <div style="background-color: #1E1E1E; padding: 15px; border-radius: 10px; border-left: 4px solid #00E5FF; margin-bottom: 10px;">
+            <a href="{item.link}" target="_blank" style="color:#00E5FF; font-weight:bold; text-decoration:none;">{item.title}</a>
+        </div>
+        """, unsafe_allow_html=True)
