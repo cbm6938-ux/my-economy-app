@@ -5,74 +5,67 @@ from datetime import datetime
 import time
 
 # 1. 페이지 설정
-st.set_page_config(page_title="Vibe Economy Pro 4.7", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Vibe Economy Pro 4.8", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 [최종 시각 최적화] 지수 카드 복구 + 네온 그린 뱃지 + 코드 노출 차단
+# 🎨 [경량화 디자인] 카드 크기 축소 및 고대비 유지
 st.markdown("""
 <style>
-    /* 전체 배경색 */
     .stApp { background-color: #f1f3f5 !important; }
     
-    /* 상단 헤더 박스 */
     .header-box {
         background-color: #0c1c4f !important;
-        padding: 25px; border-radius: 12px; margin-bottom: 25px; text-align: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;
     }
-    .header-box h2 { color: #ffffff !important; font-weight: 900 !important; margin: 0 !important; font-size: 1.8rem !important; }
+    .header-box h2 { color: #ffffff !important; font-weight: 900 !important; margin: 0 !important; font-size: 1.6rem !important; }
 
-    /* 지표 상단 안내 문구 */
-    .info-text { color: #475569 !important; font-size: 0.85rem !important; font-weight: 700 !important; margin-bottom: 10px !important; }
+    .info-text { color: #475569 !important; font-size: 0.8rem !important; font-weight: 700 !important; margin-bottom: 8px !important; }
 
-    /* 📊 [지수 카드 복구] 하얀색 카드 형태와 테두리 재설정 */
+    /* 📊 [지표 카드 경량화] 패딩 및 크기 축소 */
     div[data-testid="stMetric"] {
         background-color: #ffffff !important;
-        border: 2px solid #cbd5e1 !important;
-        border-radius: 16px !important;
-        padding: 20px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        padding: 12px 15px !important; /* 여백 축소 */
         box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
     }
-    label[data-testid="stMetricLabel"] { color: #334155 !important; font-weight: 800 !important; font-size: 1.1rem !important; }
+    label[data-testid="stMetricLabel"] { color: #334155 !important; font-weight: 800 !important; font-size: 0.95rem !important; }
     
-    /* ❗ 지수 숫자: 완전한 검정색 (시인성 극대화) */
+    /* 지수 숫자: 콤팩트하게 조정 */
     div[data-testid="stMetricValue"] { 
         color: #000000 !important; 
         font-weight: 900 !important; 
-        font-size: 2.3rem !important; 
+        font-size: 1.8rem !important; /* 크기 축소 */
     }
 
-    /* 🟢 [네온 그린 복구] 상승(Up) 수치 뱃지 스타일 */
+    /* 🟢 상승(녹색) 네온 뱃지: 콤팩트화 */
     [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Up"]) {
         color: #ffffff !important;           
         background-color: #00c853 !important; 
         font-weight: 900 !important;
-        padding: 5px 14px !important;
-        border-radius: 10px !important;
-        font-size: 1.25rem !important;
-        box-shadow: 0 0 10px rgba(0, 200, 83, 0.4);
+        padding: 3px 10px !important;
+        border-radius: 8px !important;
+        font-size: 1.1rem !important;
     }
     
-    /* 🔴 하락(Down) 수치 기본 스타일 */
     [data-testid="stMetricDelta"] > div:has(svg[data-testid="stMetricDeltaIcon-Down"]) {
         color: #dc2626 !important;
         font-weight: 600 !important;
     }
 
-    /* 뉴스 섹션 레이아웃 */
-    .section-header { color: #000000 !important; font-size: 1.5rem !important; font-weight: 900 !important; border-left: 10px solid #0c1c4f; padding-left: 15px; margin-top: 40px; }
-    .news-info { color: #64748b !important; font-size: 0.8rem !important; font-weight: 600 !important; margin-bottom: 20px; margin-left: 15px; }
+    /* 뉴스 섹션 */
+    .section-header { color: #000000 !important; font-size: 1.4rem !important; font-weight: 900 !important; border-left: 10px solid #0c1c4f; padding-left: 15px; margin-top: 30px; }
+    .news-info { color: #64748b !important; font-size: 0.8rem !important; font-weight: 600 !important; margin-bottom: 15px; margin-left: 15px; }
 
-    /* 뉴스 카드: 코드 노출 방지를 위한 한 줄 렌더링 스타일 */
     .n-card {
-        background-color: #ffffff; padding: 18px; border-radius: 12px; margin-bottom: 12px;
+        background-color: #ffffff; padding: 15px; border-radius: 12px; margin-bottom: 10px;
         border: 1px solid #cbd5e1; display: block; text-decoration: none !important;
     }
-    .n-badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .n-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 850; display: inline-block; color: white; }
+    .n-badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .n-badge { padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 850; display: inline-block; color: white; }
     .n-sector { background-color: #0c1c4f; }
     .n-imp { background-color: #ef4444; }
-    .n-time { color: #64748b; font-size: 0.8rem; margin-left: auto; font-weight: 600; }
-    .n-title { color: #000000 !important; font-weight: 800 !important; font-size: 1.1rem !important; line-height: 1.5; display: block; }
+    .n-time { color: #64748b; font-size: 0.75rem; margin-left: auto; font-weight: 600; }
+    .n-title { color: #000000 !important; font-weight: 800 !important; font-size: 1rem !important; line-height: 1.4; display: block; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -89,10 +82,9 @@ def get_eco(ticker):
         return val, diff
     except: return 0, 0
 
-# 지수 기준 안내 문구
 st.markdown('<p class="info-text">※ 각 지수는 전 거래일 종가 기준입니다</p>', unsafe_allow_html=True)
 
-# 3. 실시간 지표 (2열 배치 및 카드 복구)
+# 3. 지표 2열 배치
 indices = {"🇺🇸 국채 10년": "^TNX", "🛢️ WTI 유가": "CL=F", "💵 환율(USD)": "USDKRW=X", "🇰🇷 KOSPI": "^KS11", "🇺🇸 NASDAQ": "^IXIC"}
 cols = st.columns(2)
 for i, (name, ticker) in enumerate(indices.items()):
@@ -120,23 +112,20 @@ def get_rel_time(pub_struct):
         return f"{diff.seconds // 60}분 전"
     except: return "최근"
 
-@st.cache_data(ttl=2700) # 사령관님 전용 45분 주기
+@st.cache_data(ttl=2700)
 def fetch_news():
     url = "https://news.google.com/rss/search?q=경제&hl=ko&gl=KR&ceid=KR:ko"
     return feedparser.parse(url).entries[:10]
 
-# 뉴스 카드 출력
 try:
     news_items = fetch_news()
     for item in news_items:
         sector, imp = classify_news(item.title)
         rel_time = get_rel_time(item.published_parsed)
         imp_badge = f'<span class="n-badge n-imp">{imp}</span>' if imp else ""
-        
-        # 코드 블록 현상 방지를 위해 들여쓰기 없는 한 줄 HTML 렌더링
         card_html = f"""<div class="n-card"><div class="n-badge-row"><span class="n-badge n-sector">{sector}</span>{imp_badge}<span class="n-time">⏱ {rel_time}</span></div><a href="{item.link}" target="_blank" class="n-title">{item.title}</a></div>"""
         st.markdown(card_html, unsafe_allow_html=True)
 except:
     st.info("뉴스를 연결 중입니다...")
 
-st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.7 | Complete Fleet Recovery</p>", unsafe_allow_html=True)
+st.markdown("<br><p style='text-align:center; color:#94a3b8; font-size:0.8rem;'>Vibe Coding Pro v4.8 | Compact View Mode</p>", unsafe_allow_html=True)
